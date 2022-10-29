@@ -1,0 +1,5 @@
+kuberntes:
+  cluster-name: local
+  config-path: 
+  api-server-context: 
+  cluster-version: 1.25.0
