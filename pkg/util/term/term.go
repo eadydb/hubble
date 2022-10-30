@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eadydb/probe-pilot/pkg/constants"
-	"github.com/eadydb/probe-pilot/pkg/util"
+	"github.com/eadydb/hubble/pkg/constants"
+	"github.com/eadydb/hubble/pkg/util"
 	"golang.org/x/term"
 )
 

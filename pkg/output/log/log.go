@@ -6,7 +6,7 @@ import (
 	"io"
 	stdlog "log"
 
-	"github.com/eadydb/probe-pilot/pkg/constants"
+	"github.com/eadydb/hubble/pkg/constants"
 	ggcrlogs "github.com/google/go-containerregistry/pkg/logs"
 
 	"github.com/sirupsen/logrus"

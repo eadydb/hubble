@@ -1,6 +1,6 @@
 package registry
 
-import "github.com/eadydb/probe-pilot/internal/app"
+import "github.com/eadydb/hubble/internal/app"
 
 type Registry interface {
 	Info(name string) *app.App

@@ -2,7 +2,8 @@ package config
 
 // GlobalConfig holds configuration
 type GlobalConfig struct {
-	Global *ContextConfig `yaml:"global,omitempty"`
+	Global         *ContextConfig   `yaml:"global,omitempty"`
+	ContextConfigs []*ContextConfig `yaml:"kubeContexts"`
 }
 
 // ContextConfig

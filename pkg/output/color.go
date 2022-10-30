@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/eadydb/probe-pilot/pkg/util/term"
+	"github.com/eadydb/hubble/pkg/util/term"
 	colors "github.com/heroku/color"
 	"github.com/mattn/go-colorable"
 )

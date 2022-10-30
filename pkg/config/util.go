@@ -8,8 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eadydb/probe-pilot/pkg/output/log"
-	"github.com/eadydb/probe-pilot/pkg/util"
+	kubectx "github.com/eadydb/hubble/pkg/kube/context"
+	"github.com/eadydb/hubble/pkg/output/log"
+	"github.com/eadydb/hubble/pkg/util"
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v2"
@@ -115,13 +116,13 @@ func getConfigForKubeContextWithGlobalDefaults(cfg *GlobalConfig, kubeContext st
 
 	var mergedConfig ContextConfig
 	for _, contextCfg := range cfg.ContextConfigs {
-		if util.RegexEqual(contextCfg.Kubecontext, kubeContext) {
+		if util.RegexEqual(contextCfg.KubeConfig.Kubecontext, kubeContext) {
 			log.Entry(context.TODO()).Debugf("found config for context %q", kubeContext)
 			mergedConfig = *contextCfg
 		}
 	}
 	// in case there was no config for this kubeContext in cfg.ContextConfigs
-	mergedConfig.Kubecontext = kubeContext
+	mergedConfig.KubeConfig.Kubecontext = kubeContext
 
 	if cfg.Global != nil {
 		// if values are unset for the current context, retrieve
@@ -131,15 +132,4 @@ func getConfigForKubeContextWithGlobalDefaults(cfg *GlobalConfig, kubeContext st
 		}
 	}
 	return &mergedConfig, nil
-}
-
-type GetClusterOpts struct {
-	ConfigFile string
-	// DefaultRepo     StringOrUndefined
-	MinikubeProfile string
-	DetectMinikube  bool
-}
-
-func GetCluster(ctx context.Context, opts GetClusterOpts) error {
-	return nil
 }

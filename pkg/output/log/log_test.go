@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/eadydb/probe-pilot/pkg/constants"
-	"github.com/eadydb/probe-pilot/pkg/testutil"
+	"github.com/eadydb/hubble/pkg/constants"
+	"github.com/eadydb/hubble/pkg/testutil"
 	"github.com/sirupsen/logrus"
 
 	ggcrlogs "github.com/google/go-containerregistry/pkg/logs"
