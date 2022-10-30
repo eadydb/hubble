@@ -14,6 +14,11 @@ const (
 	Sync        = Phase("Sync")
 	DevInit     = Phase("DevInit")
 	Cleanup     = Phase("Cleanup")
+
+	DefaultMinikubeContext         = "minikube"
+	DefaultDockerForDesktopContext = "docker-for-desktop"
+	DefaultDockerDesktopContext    = "docker-desktop"
+	GCSBucketSuffix                = "_cloudbuild"
 )
 
 const (

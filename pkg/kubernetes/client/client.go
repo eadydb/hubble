@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/eadydb/hubble/pkg/kube/context"
+	"github.com/eadydb/hubble/pkg/kubernetes/context"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 )

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // VerifyOrCreateFile checks if a file exists at the given path,
@@ -21,4 +22,13 @@ func VerifyOrCreateFile(path string) error {
 		return nil
 	}
 	return err
+}
+
+func Ptr[T any](t T) *T {
+	o := t
+	return &o
+}
+
+func IsURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }

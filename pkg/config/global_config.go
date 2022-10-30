@@ -14,13 +14,15 @@ type ContextConfig struct {
 
 // KubeConfig // kubernetes configuration
 type KubeConfig struct {
-	ConfigDir     string `yaml:"config_dir,omitempty"`
-	ConfigFile    string `yaml:"config_file,omitempty"`
-	Kubecontext   string `yaml:"kube-context,omitempty"`
-	LocalCluster  string `yaml:"local-cluster"`
-	KubeName      string `yaml:"kube-name,omitempty"`
-	KubeVersion   string `yaml:"kube-version"`
-	KubeApiServer string `yaml:"kube-api-server"`
+	ConfigDir       string `yaml:"config_dir,omitempty"`
+	ConfigFile      string `yaml:"config_file,omitempty"`
+	Kubecontext     string `yaml:"kube-context,omitempty"`
+	LocalCluster    *bool  `yaml:"local-cluster"`
+	KindDisableLoad *bool  `yaml:"kind-disable-load,omitempty"`
+	K3dDisableLoad  *bool  `yaml:"k3d-disable-load,omitempty"`
+	KubeName        string `yaml:"kube-name,omitempty"`
+	KubeVersion     string `yaml:"kube-version"`
+	KubeApiServer   string `yaml:"kube-api-server"`
 }
 
 // RegistryConfig registry configuration

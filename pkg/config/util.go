@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	kubectx "github.com/eadydb/hubble/pkg/kube/context"
+	kubectx "github.com/eadydb/hubble/pkg/kubernetes/context"
 	"github.com/eadydb/hubble/pkg/output/log"
 	"github.com/eadydb/hubble/pkg/util"
 	"github.com/imdario/mergo"
