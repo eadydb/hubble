@@ -1,0 +1,147 @@
+package kubernetes
+
+import (
+	"bufio"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+
+	"github.com/eadydb/hubble/pkg/kubernetes/client"
+	"github.com/eadydb/hubble/pkg/output/log"
+	"github.com/eadydb/hubble/pkg/yaml"
+)
+
+type yamlObject map[string]interface{}
+
+// These are the required fields for a yaml document to be a valid Kubernetes yaml
+var requiredFields = []string{"apiVersion", "kind", "metadata"}
+
+// These are the supported file formats for Kubernetes manifests
+var validSuffixes = []string{".yml", ".yaml", ".json"}
+
+// HasKubernetesFileExtension is for determining if a file under a glob pattern
+// is deployable file format. It makes no attempt to check whether or not the file
+// is actually deployable or has the correct contents.
+func HasKubernetesFileExtension(n string) bool {
+	for _, s := range validSuffixes {
+		if strings.HasSuffix(n, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsKubernetesManifest is for determining if a file is a valid Kubernetes manifest
+func IsKubernetesManifest(file string) bool {
+	_, err := parseKubernetesObjects(file)
+	return err == nil
+}
+
+// ParseImagesFromKubernetesYaml parses the kubernetes yamls, and if it finds at least one
+// valid Kubernetes object, it will return the images referenced in them.
+func ParseImagesFromKubernetesYaml(filepath string) ([]string, error) {
+	k8sObjects, err := parseKubernetesObjects(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	var images []string
+	for _, k8sObject := range k8sObjects {
+		images = append(images, parseImagesFromYaml(k8sObject)...)
+	}
+
+	return images, nil
+}
+
+// parseKubernetesObjects uses required fields from the k8s spec
+// to determine if a provided yaml file is a valid k8s manifest, as detailed in
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/#required-fields.
+// If so, it will return the parsed objects.
+func parseKubernetesObjects(filepath string) ([]yamlObject, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("opening config file: %w", err)
+	}
+	defer f.Close()
+
+	r := k8syaml.NewYAMLReader(bufio.NewReader(f))
+
+	var k8sObjects []yamlObject
+
+	for {
+		doc, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading config file: %w", err)
+		}
+
+		obj := make(yamlObject)
+		if err := yaml.Unmarshal(doc, &obj); err != nil {
+			return nil, fmt.Errorf("reading Kubernetes YAML: %w", err)
+		}
+
+		if !hasRequiredK8sManifestFields(obj) {
+			continue
+		}
+
+		k8sObjects = append(k8sObjects, obj)
+	}
+	if len(k8sObjects) == 0 {
+		return nil, errors.New("no valid Kubernetes objects decoded")
+	}
+	return k8sObjects, nil
+}
+
+func hasRequiredK8sManifestFields(doc map[string]interface{}) bool {
+	for _, field := range requiredFields {
+		if _, ok := doc[field]; !ok {
+			log.Entry(context.TODO()).Debugf("%s not present in yaml, continuing", field)
+			return false
+		}
+	}
+	return true
+}
+
+// adapted from pkg/skaffold/deploy/kubectl/recursiveReplaceImage()
+func parseImagesFromYaml(obj interface{}) []string {
+	var images []string
+
+	switch t := obj.(type) {
+	case []interface{}:
+		for _, v := range t {
+			images = append(images, parseImagesFromYaml(v)...)
+		}
+	case yamlObject:
+		for k, v := range t {
+			if k != "image" {
+				images = append(images, parseImagesFromYaml(v)...)
+				continue
+			}
+
+			if value, ok := v.(string); ok {
+				images = append(images, value)
+			}
+		}
+	}
+
+	return images
+}
+
+// FailIfClusterIsNotReachable checks that Kubernetes is reachable.
+// This gives a clear early error when the cluster can't be reached.
+func FailIfClusterIsNotReachable(kubeContext string) error {
+	c, err := client.Client(kubeContext)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.Discovery().ServerVersion()
+	return err
+}

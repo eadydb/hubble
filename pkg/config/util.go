@@ -133,3 +133,9 @@ func getConfigForKubeContextWithGlobalDefaults(cfg *GlobalConfig, kubeContext st
 	}
 	return &mergedConfig, nil
 }
+
+// UpdateMsgDisplayed updates the `last-prompted` config for `update-config` in
+// the hubble config
+func UpdateMsgDisplayed(configFile string) error {
+	return nil
+}

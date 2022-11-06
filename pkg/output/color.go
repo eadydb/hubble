@@ -149,7 +149,7 @@ func IsColorable(out io.Writer) bool {
 	switch w := out.(type) {
 	case colorableWriter:
 		return true
-	case probeWriter:
+	case hubbleWriter:
 		return IsColorable(w.MainWriter)
 	default:
 		return false
