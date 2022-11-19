@@ -13,6 +13,7 @@ import (
 	"github.com/eadydb/hubble/pkg/output/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"k8s.io/kubectl/pkg/util/templates"
 
 	kubectx "github.com/eadydb/hubble/pkg/kubernetes/context"
 )
@@ -25,6 +26,11 @@ var (
 	overwrite    bool
 	interactive  bool
 	timestamps   bool
+)
+
+// Annotation for commands that should allow post execution housekeeping messages like updates and surveys
+const (
+	HouseKeepingMessagesAllowedAnnotation = "skaffold_annotation_housekeeping_allowed"
 )
 
 func NewHubbleCommand(out, errOut io.Writer) *cobra.Command {
@@ -70,6 +76,33 @@ func NewHubbleCommand(out, errOut io.Writer) *cobra.Command {
 		},
 	}
 
+	groups := templates.CommandGroups{
+		{
+			Message: "Basic Commands:",
+            Commands: []*cobra.Command{
+                {
+                    Use:   "init",
+                    Short: "Initialize a new project",
+                    Long:  "Initialize a new project",
+				}
+		},
+		{
+			Message: "Hubble Commands:",
+            Commands: []*cobra.Command{
+                {
+                    Use:   "hubble",
+                    Short: "Hubble is a tool to interact with the Hubble API",
+				}
+		},
+	}
+
+	groups.Add(rootCmd)
+
+	// other commands
+	rootCmd.AddCommand(NewCmdConfig())
+
+	templates.ActsAsRootCommand(rootCmd, nil, groups...)
+
 	rootCmd.PersistentFlags().StringVarP(&v, "verbosity", "v", log.DefaultLogLevel.String(), fmt.Sprintf("Log level: one of %v", log.AllLevels))
 	rootCmd.PersistentFlags().IntVar(&defaultColor, "color", int(output.DefaultColorCode), "Specify the default output color in ANSI escape codes")
 	rootCmd.PersistentFlags().BoolVar(&forceColors, "force-colors", false, "Always print color codes (hidden)")
@@ -79,6 +112,18 @@ func NewHubbleCommand(out, errOut io.Writer) *cobra.Command {
 
 	setFlagsFromEnvVariables(rootCmd)
 	return rootCmd
+}
+
+func NewCmdOptions() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "options",
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Usage()
+		},
+	}
+	templates.UseOptionsTemplates(cmd)
+
+	return cmd
 }
 
 // Each flag can also be set with an env variable whose name starts with `HUBBLE_`.
@@ -113,4 +158,34 @@ func FlagToEnvVarName(f *pflag.Flag) string {
 
 func setUpLogs(stdErr io.Writer, level string, timestamp bool) error {
 	return log.SetupLogs(stdErr, level, timestamp, event.NewLogHook())
+}
+
+func isHouseKeepingMessagesAllowed(cmd *cobra.Command) bool {
+	if cmd.Annotations == nil {
+		return false
+	}
+	return cmd.Annotations[HouseKeepingMessagesAllowedAnnotation] == fmt.Sprintf("%t", true)
+}
+
+func allowHouseKeepingMessages(cmd *cobra.Command) {
+	if cmd.Annotations == nil {
+		cmd.Annotations = make(map[string]string)
+	}
+	cmd.Annotations[HouseKeepingMessagesAllowedAnnotation] = fmt.Sprintf("%t", true)
+}
+
+func isQuietMode() bool {
+	switch {
+	case !interactive:
+		log.Entry(context.TODO()).Debug("Update check prompt, survey prompt and telemetry prompt disabled in non-interactive mode")
+		return true
+	case quietFlag:
+		log.Entry(context.TODO()).Debug("Update check prompt, survey prompt and telemetry prompt disabled in quiet mode")
+		return true
+	case analyze:
+		log.Entry(context.TODO()).Debug("Update check prompt, survey prompt and telemetry prompt disabled when running `init --analyze`")
+		return true
+	default:
+		return false
+	}
 }

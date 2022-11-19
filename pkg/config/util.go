@@ -116,13 +116,13 @@ func getConfigForKubeContextWithGlobalDefaults(cfg *GlobalConfig, kubeContext st
 
 	var mergedConfig ContextConfig
 	for _, contextCfg := range cfg.ContextConfigs {
-		if util.RegexEqual(contextCfg.KubeConfig.Kubecontext, kubeContext) {
+		if util.RegexEqual(contextCfg.Kubecontext, kubeContext) {
 			log.Entry(context.TODO()).Debugf("found config for context %q", kubeContext)
 			mergedConfig = *contextCfg
 		}
 	}
 	// in case there was no config for this kubeContext in cfg.ContextConfigs
-	mergedConfig.KubeConfig.Kubecontext = kubeContext
+	mergedConfig.Kubecontext = kubeContext
 
 	if cfg.Global != nil {
 		// if values are unset for the current context, retrieve
@@ -137,5 +137,20 @@ func getConfigForKubeContextWithGlobalDefaults(cfg *GlobalConfig, kubeContext st
 // UpdateMsgDisplayed updates the `last-prompted` config for `update-config` in
 // the hubble config
 func UpdateMsgDisplayed(configFile string) error {
+	return nil
+}
+
+func WriteFullConfig(configFile string, cfg *GlobalConfig) error {
+	contents, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("marshaling config: %w", err)
+	}
+	configFileOrDefault, err := ResolveConfigFile(configFile)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(configFileOrDefault, contents, 0o644); err != nil {
+		return fmt.Errorf("writing config file: %w", err)
+	}
 	return nil
 }
