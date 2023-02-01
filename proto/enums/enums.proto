@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package proto.enums;
+
+option go_package =  "github.com/eadydb/hubble/proto/enums";
+
+// Enum for Status codes<br>
+// These error codes are prepended by Phase Name e.g.
+// For Success Error codes, use range 200 to 250.<br>
+// For Unknown error codes, use range 500 to 600.<br>
+// For Cancelled Error code, use range 800 to 850.<br>
+enum StatusCode{
+  OK = 0;
+
+  // Success codes
+
+  // Status Check Success
+  STATUS_CHECK_SUCCESS = 200;
+}
+
+// Enum for Suggestion codes
+enum SuggestionCode {
+  // default nil suggestion.
+  // This is usually set when no error happens.
+  NIL = 0;
+}

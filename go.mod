@@ -5,15 +5,19 @@ go 1.19
 require (
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/google/go-cmp v0.5.9
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0
+	github.com/karrick/godirwalk v1.16.1
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20220114050600-8b9d41f48198
 	github.com/spf13/pflag v1.0.5
 	github.com/wzshiming/ctc v1.2.3
+	golang.org/x/exp v0.0.0-20230131160201-f062dba9d201
 	golang.org/x/term v0.4.0
+	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37
+	google.golang.org/grpc v1.51.0
+	google.golang.org/protobuf v1.28.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
-	github.com/karrick/godirwalk v1.16.1
-	github.com/opencontainers/go-digest v1.0.0
-	golang.org/x/exp v0.0.0-20230131160201-f062dba9d201
 )
 
 require (
@@ -56,12 +60,11 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/wzshiming/winseq v0.0.0-20200112104235-db357dc107ae // indirect
 	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
-	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
+	golang.org/x/oauth2 v0.3.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/eadydb/hubble/proto";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+import public "enums/enums.proto";
+
+
+// `StatusCheckState` describes the state of status check of current deployed resources.
+message StatusCheckState {
+  string status = 1;
+  // A map of `resource name -> status-check-state`. Where `resource-name` is the kubernetes resource name.
+  // The `status-check-state` can be <br>
+  // - `"Not started"`: indicates that `status-check` has just started. <br>
+  // - `"In progress"`: InProgress is sent after every resource check is complete. <br>
+  // - `"Succeeded"`:
+  // - `"Failed"`:
+  map<string, string> resources = 2;
+  // StatusCheck statusCode
+  enums.StatusCode statusCode = 3;
+
+}
+
+// Suggestion defines the action a user needs to recover from an error.
+message Suggestion {
+  enums.SuggestionCode suggestionCode = 1; // code representing a suggestion
+  string action = 2; // action represents the suggestion action
+}
+
+// `ActionableErr` defines an error that occurred along with an optional list of suggestions
+message ActionableErr {
+  enums.StatusCode errCode = 1; // error code representing the error
+  string message = 2; // message describing the error.
+  repeated Suggestion suggestions = 3; // list of suggestions
+}
+
+service Hubble {
+  // 打招呼方法
+  rpc SayHello (HelloRequest) returns (HelloReply) {
+    // 这里添加了google.api.http注释
+    option (google.api.http) = {
+      post: "/v1/example/echo"
+      body: "*"
+    };
+  }
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
