@@ -25,8 +25,8 @@ type Logger struct {
 }
 
 // LogDepth logs a message with the given level and depth.
-func (l *Logger) LogDepth(callDepth int, level Level, msg string, args ...any) {
-	l.log.LogDepth(callDepth+1, level, msg, args...)
+func (l *Logger) LogDepth(calldepth int, level Level, msg string, args ...any) {
+	l.log.LogDepth(calldepth+1, level, msg, args...)
 }
 
 // Log logs a message with the given level.

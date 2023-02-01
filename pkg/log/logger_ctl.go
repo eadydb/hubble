@@ -1,9 +1,10 @@
 package log
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eadydb/octopus/pkg/utils/format"
+	"github.com/eadydb/hubble/pkg/utils/format"
 	"io"
 	"strconv"
 	"strings"
@@ -32,7 +33,7 @@ func newCtlHandler(w io.Writer, fd int, level slog.Level) *ctlHandler {
 	}
 }
 
-func (c *ctlHandler) Enabled(level slog.Level) bool {
+func (c *ctlHandler) Enabled(ctx context.Context, level Level) bool {
 	return level >= c.level
 }
 

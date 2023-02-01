@@ -1,7 +1,7 @@
 package envs
 
 import (
-	"github.com/eadydb/octopus/pkg/utils/format"
+	"github.com/eadydb/hubble/pkg/utils/format"
 	"os"
 )
 

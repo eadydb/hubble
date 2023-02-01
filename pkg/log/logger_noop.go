@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"golang.org/x/exp/slog"
 )
 
@@ -10,7 +11,7 @@ type noopHandler struct{}
 
 var _ slog.Handler = noopHandler{}
 
-func (noopHandler) Enabled(slog.Level) bool {
+func (noopHandler) Enabled(context.Context, Level) bool {
 	return false
 }
 
