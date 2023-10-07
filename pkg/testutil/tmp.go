@@ -1,13 +1,14 @@
 package testutil
 
 import (
-	"github.com/eadydb/hubble/pkg/walk"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/eadydb/hubble/pkg/utils/walk"
 )
 
 // TempFile creates a temporary file with a given content. Returns the file name.
@@ -19,7 +20,7 @@ func TempFile(t *testing.T, prefix string, content []byte) string {
 
 	t.Cleanup(func() { syscall.Unlink(file.Name()) })
 
-	if err = os.WriteFile(file.Name(), content, 0644); err != nil {
+	if err = os.WriteFile(file.Name(), content, 0o644); err != nil {
 		t.Error(err)
 	}
 

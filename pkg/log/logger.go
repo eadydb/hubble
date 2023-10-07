@@ -5,41 +5,66 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
-	"golang.org/x/exp/slog"
+	"golang.org/x/exp/slog" //nolint:depguard
 	"golang.org/x/term"
 )
 
 // IsTerminal returns true if the given file descriptor is a terminal.
-var IsTerminal = term.IsTerminal
+func IsTerminal() bool {
+	return isTerminal(int(os.Stdout.Fd()))
+}
 
-// Entry returns the Logger associated with ctx, or the default logger.
+var isTerminal = term.IsTerminal
+
+// DurationFormat is the format used to print time.Duration in both nanosecond and string.
+type DurationFormat struct {
+	Nanosecond int64  `json:"nanosecond"`
+	Human      string `json:"human"`
+}
+
+// contextKey is how we find Logger in a context.Context.
+type contextKey struct{}
+
+// FromContext returns the Logger associated with ctx, or the default logger.
 func Entry(ctx context.Context) *Logger {
-	return wrapSlog(fromContext(ctx))
+	if l, ok := ctx.Value(contextKey{}).(*Logger); ok {
+		return l
+	}
+	return wrapSlog(slog.Default().Handler(), LevelInfo)
 }
 
 // NewContext returns a new context with the given logger.
 func NewContext(ctx context.Context, logger *Logger) context.Context {
-	return newContext(ctx, logger.log)
+	return context.WithValue(ctx, contextKey{}, logger)
 }
 
 // NewLogger returns a new Logger that writes to w.
-func NewLogger(w io.Writer, level slog.Level) *Logger {
+func NewLogger(w io.Writer, level Level) *Logger {
 	if w == nil {
 		return noop
 	}
 
 	if file, ok := w.(*os.File); ok {
 		fd := int(file.Fd())
-		if IsTerminal(fd) {
-			return wrapSlog(slog.New(newCtlHandler(w, fd, level)))
+		if isTerminal(fd) {
+			return wrapSlog(newCtlHandler(w, fd, level), level)
 		}
 	}
 
-	handler := slog.HandlerOptions{
+	handler := &slog.HandlerOptions{
 		AddSource: true,
 		Level:     level,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Value.Kind() == slog.KindDuration {
+				if t, ok := a.Value.Any().(time.Duration); ok {
+					return slog.Any(a.Key, DurationFormat{
+						Nanosecond: int64(t),
+						Human:      t.String(),
+					})
+				}
+			}
 			if a.Value.Kind() == slog.KindAny {
 				if t, ok := a.Value.Any().(fmt.Stringer); ok {
 					return slog.Attr{
@@ -51,5 +76,5 @@ func NewLogger(w io.Writer, level slog.Level) *Logger {
 			return a
 		},
 	}
-	return wrapSlog(slog.New(handler.NewJSONHandler(w)))
+	return wrapSlog(slog.NewJSONHandler(w, handler), level)
 }

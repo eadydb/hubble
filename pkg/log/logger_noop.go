@@ -2,20 +2,21 @@ package log
 
 import (
 	"context"
-	"golang.org/x/exp/slog"
+
+	"golang.org/x/exp/slog" //nolint:depguard
 )
 
-var noop = wrapSlog(slog.New(noopHandler{}))
+var noop = wrapSlog(noopHandler{}, LevelInfo)
 
 type noopHandler struct{}
 
 var _ slog.Handler = noopHandler{}
 
-func (noopHandler) Enabled(context.Context, Level) bool {
+func (noopHandler) Enabled(_ context.Context, _ slog.Level) bool {
 	return false
 }
 
-func (noopHandler) Handle(r slog.Record) error {
+func (noopHandler) Handle(_ context.Context, _ slog.Record) error {
 	return nil
 }
 

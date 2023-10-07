@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eadydb/hubble/pkg/utils/format"
 	"io"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/eadydb/hubble/pkg/utils/format"
 	"github.com/wzshiming/ctc"
-	"golang.org/x/exp/slog"
+	"golang.org/x/exp/slog" //nolint:depguard
 	"golang.org/x/term"
 )
 
 type ctlHandler struct {
-	level    slog.Level
+	level    Level
 	output   io.Writer
 	attrs    []slog.Attr
 	attrsStr *string
@@ -25,7 +25,7 @@ type ctlHandler struct {
 	fd       int
 }
 
-func newCtlHandler(w io.Writer, fd int, level slog.Level) *ctlHandler {
+func newCtlHandler(w io.Writer, fd int, level Level) *ctlHandler {
 	return &ctlHandler{
 		output: w,
 		fd:     fd,
@@ -33,7 +33,7 @@ func newCtlHandler(w io.Writer, fd int, level slog.Level) *ctlHandler {
 	}
 }
 
-func (c *ctlHandler) Enabled(ctx context.Context, level Level) bool {
+func (c *ctlHandler) Enabled(_ context.Context, level Level) bool {
 	return level >= c.level
 }
 
@@ -59,85 +59,94 @@ func formatValue(val slog.Value) string {
 	}
 }
 
-func (c *ctlHandler) Handle(r slog.Record) error {
+func (c *ctlHandler) Handle(_ context.Context, r slog.Record) error {
 	if r.Level < c.level {
 		return nil
 	}
 
-	if c.attrsStr == nil {
-		attrs := make([]string, 0, len(c.attrs))
-		for _, attr := range c.attrs {
-			attrs = append(attrs, attr.Key+"="+formatValue(attr.Value))
-		}
-		attrsStr := strings.Join(attrs, " ")
-		c.attrsStr = &attrsStr
-	}
-
 	attrs := make([]string, 0, r.NumAttrs()+1)
-	if c.attrsStr != nil {
-		attrs = append(attrs, *c.attrsStr)
-	}
-	r.Attrs(func(attr slog.Attr) {
+	r.Attrs(func(attr slog.Attr) bool {
 		value := formatValue(attr.Value)
 		if len(c.groups) == 0 {
 			attrs = append(attrs, attr.Key+"="+value)
 		} else {
 			attrs = append(attrs, strings.Join(append(c.groups, attr.Key), ".")+"="+value)
 		}
+		return true
 	})
+
+	if c.attrsStr == nil {
+		attrs := make([]string, 0, len(c.attrs))
+		for i := len(c.attrs) - 1; i >= 0; i-- {
+			attr := c.attrs[i]
+			attrs = append(attrs, attr.Key+"="+formatValue(attr.Value))
+		}
+		attrsStr := strings.Join(attrs, " ")
+		c.attrsStr = &attrsStr
+	}
+
+	if c.attrsStr != nil {
+		attrs = append(attrs, *c.attrsStr)
+	}
 
 	attrsStr := ""
 	if len(attrs) != 0 {
 		attrsStr = strings.Join(attrs, " ")
 	}
 
-	msg := r.Message
-	var err error
-	if attrsStr == "" {
-		if r.Level != slog.LevelInfo {
-			levelStr := r.Level.String()
-			c, ok := levelColour[strings.SplitN(levelStr, "+", 2)[0]]
-			if ok {
-				msg = c.renderer + " " + msg
-			}
-		}
-		_, err = fmt.Fprintf(c.output, "%s\n", msg)
-	} else {
-		msgWidth := stringWidth(msg)
-		if r.Level != slog.LevelInfo {
-			levelStr := r.Level.String()
-			c, ok := levelColour[strings.SplitN(levelStr, "+", 2)[0]]
-			if ok {
-				msg = c.renderer + " " + msg
-				msgWidth += c.width + 1
-			}
-		}
-		termWidth, _, _ := term.GetSize(c.fd)
-		if termWidth > msgWidth {
-			_, err = fmt.Fprintf(c.output, "%s%*s\n", msg, termWidth-1-msgWidth, attrsStr)
-		} else {
-			_, err = fmt.Fprintf(c.output, "%s%s\n", msg, attrsStr)
-		}
+	var termWidth int
+	if c.fd != 0 {
+		termWidth, _, _ = term.GetSize(c.fd)
 	}
+	log := formatLog(r.Message, attrsStr, r.Level, termWidth)
+	_, err := io.WriteString(c.output, log)
 	return err
 }
 
-type colour struct {
+func formatLog(msg string, attrs string, level Level, termWidth int) string {
+	if attrs == "" {
+		if level != LevelInfo {
+			levelStr := level.String()
+			c, ok := levelColor[strings.SplitN(levelStr, "+", 2)[0]]
+			if ok {
+				msg = c.renderer + " " + msg
+			}
+		}
+		return fmt.Sprintf("%s\n", msg)
+	}
+
+	msgWidth := stringWidth(msg)
+	if level != LevelInfo {
+		levelStr := level.String()
+		c, ok := levelColor[strings.SplitN(levelStr, "+", 2)[0]]
+		if ok {
+			msg = c.renderer + " " + msg
+			msgWidth += c.width + 1
+		}
+	}
+	if termWidth > msgWidth {
+		return fmt.Sprintf("%s %*s\n", msg, termWidth-msgWidth-1, attrs)
+	}
+
+	return fmt.Sprintf("%s %s\n", msg, attrs)
+}
+
+type color struct {
 	renderer string
 	width    int
 }
 
-func newColour(c ctc.Color, msg string) colour {
-	return colour{
+func newColour(c ctc.Color, msg string) color {
+	return color{
 		renderer: fmt.Sprintf("%s%s%s", c, msg, ctc.Reset),
 		width:    stringWidth(msg),
 	}
 }
 
-var levelColour = map[string]colour{
-	slog.LevelError.String(): newColour(ctc.ForegroundRed, slog.LevelError.String()),
-	slog.LevelWarn.String():  newColour(ctc.ForegroundYellow, slog.LevelWarn.String()),
-	slog.LevelDebug.String(): newColour(ctc.ForegroundCyan, slog.LevelDebug.String()),
+var levelColor = map[string]color{
+	LevelError.String(): newColour(ctc.ForegroundRed, LevelError.String()),
+	LevelWarn.String():  newColour(ctc.ForegroundYellow, LevelWarn.String()),
+	LevelDebug.String(): newColour(ctc.ForegroundCyan, LevelDebug.String()),
 }
 
 func (c *ctlHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
@@ -203,9 +212,20 @@ func runeWidth(r rune) int {
 // otherwise return the original string
 func quoteIfNeed(s string) string {
 	for _, c := range s {
-		if !unicode.In(c, unicode.Letter, unicode.Digit) {
+		if !unicode.Is(quoteRangeTable, c) {
 			return strconv.Quote(s)
 		}
 	}
 	return s
+}
+
+var quoteRangeTable = &unicode.RangeTable{
+	R16: []unicode.Range16{
+		{'-', '/', 1}, // '-' '.' '/'
+		{'0', '9', 1},
+		{':', ':', 1},
+		{'A', 'Z', 1},
+		{'_', '_', 1},
+		{'a', 'z', 1},
+	},
 }
