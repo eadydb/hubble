@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/docker/docker v20.10.23+incompatible
+	github.com/fvbommel/sortorder v1.1.0
 	github.com/google/go-cmp v0.5.9
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0
 	github.com/karrick/godirwalk v1.16.1
